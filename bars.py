@@ -2,6 +2,10 @@ import json
 import argparse
 
 
+def get_seats_count_in_bar(bar):
+    return bar['Cells']['SeatsCount']
+    
+    
 def load_data(filepath):
     with open(filepath, 'r') as jsonObj:
         data = json.load(jsonObj)
@@ -9,35 +13,29 @@ def load_data(filepath):
 
 
 def get_biggest_bar(data):
-    max = -1
-    for d in data:
-        if d['Cells']['SeatsCount'] > max:
-            max = d['Cells']['SeatsCount']
-            name = d['Cells']['Name']
-            addr = d['Cells']['Address']
-    return max, name, addr
+    biggest_bar = max(data, key=get_seats_count_in_bar)
+    seats_count = biggest_bar['Cells']['SeatsCount']
+    name = biggest_bar['Cells']['Name']
+    address = biggest_bar['Cells']['Address']
+    return seats_count, name, address
 
 
 def get_smallest_bar(data):
-    min = data[0]['Cells']['SeatsCount']
-    for d in data:
-        if d['Cells']['SeatsCount'] < min:
-            min = d['Cells']['SeatsCount']
-            name = d['Cells']['Name']
-            addr = d['Cells']['Address']
-    return min, name, addr
+    smallest_bar = min(data, key=get_seats_count_in_bar)
+    seats_count = smallest_bar['Cells']['SeatsCount']
+    name = smallest_bar['Cells']['Name']
+    address = smallest_bar['Cells']['Address']
+    return seats_count, name, address
 
 
 def get_closest_bar(data, longitude, latitude):
-    distance = 100.0
-    for d in data:
-        dist_temp = ((longitude - d['Cells']['geoData']['coordinates'][0])**2.0
-            + (latitude - d['Cells']['geoData']['coordinates'][1])**2.0)**0.5
-        if dist_temp < distance:
-            distance = dist_temp
-            name = d['Cells']['Name']
-            addr = d['Cells']['Address']
-    return name, addr
+    distance = lambda bar: (
+            (longitude - bar['Cells']['geoData']['coordinates'][0])**2.0 + 
+            (latitude - bar['Cells']['geoData']['coordinates'][1])**2.0)**0.5
+    closest_bar = min(data, key=distance)
+    name = closest_bar['Cells']['Name']
+    address = closest_bar['Cells']['Address']
+    return name, address
 
 
 if __name__ == '__main__':
@@ -48,13 +46,19 @@ if __name__ == '__main__':
                             default=55.882243910520, help='Широта')
     args = parser.parse_args()
     data = load_data('bars.json')
-    min_seats_count, min_name, min_addr = get_smallest_bar(data)
-    max_seats_count, max_name, max_addr = get_biggest_bar(data)
-    closest_name, closest_addr = get_closest_bar(data, args.longitude,
-                                                    args.latitude)
-    min_str = 'Минимальное количество мест: %d\n\tназвание: %s, адрес: %s\n'
-    max_str = 'Максимальное количество мест: %d\n\tназвание: %s, адрес: %s\n'
-    closest_str = 'Ближайший бар "%s", адрес: %s'
-    print(min_str % (min_seats_count, min_name, min_addr))
-    print(max_str % (max_seats_count, max_name, max_addr))
-    print(closest_str % (closest_name, closest_addr))
+    (smallest_bar_seats_count, smallest_bar_name, 
+        smallest_bar_address) = get_smallest_bar(data)
+    (biggest_bar_seats_count, biggest_bar_name, 
+        biggest_bar_address) = get_biggest_bar(data)
+    (closest_bar_name, closest_bar_address) = get_closest_bar(data, 
+                                    args.longitude, args.latitude)
+    smallest_bar_format_str = '''Минимальное количество мест: %d
+\tназвание: %s, адрес: %s\n'''
+    biggest_bar_format_str = '''Максимальное количество мест: %d
+\tназвание: %s, адрес: %s\n'''
+    closest_bar_format_str = 'Ближайший бар "%s", адрес: %s'
+    print(smallest_bar_format_str % 
+        (smallest_bar_seats_count, smallest_bar_name, smallest_bar_address))
+    print(biggest_bar_format_str % 
+        (biggest_bar_seats_count, biggest_bar_name, biggest_bar_address))
+    print(closest_bar_format_str % (closest_bar_name, closest_bar_address))
