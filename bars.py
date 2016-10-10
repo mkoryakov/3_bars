@@ -7,8 +7,8 @@ def get_seats_count_in_bar(bar):
     
     
 def load_data(filepath):
-    with open(filepath, 'r') as jsonObj:
-        data = json.load(jsonObj)
+    with open(filepath, 'r') as json_handler:
+        data = json.load(json_handler)
     return data
 
 
